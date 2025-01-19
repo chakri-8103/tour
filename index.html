@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temple Route Animation with Full-Screen Photos</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        #map {
+            height: 600px;
+            width: 100%;
+        }
+        .info {
+            padding: 10px;
+            background: white;
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            border-radius: 4px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .highlight {
+            color: blue;
+            font-weight: bold;
+        }
+        .fullscreen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        .fullscreen img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 4px;
+        }
+        /* Stylish Welcome Screen */
+        .welcome {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #FF9800, #FFC107);
+            color: white;
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            align-items: center;
+            justify-content: center;
+            z-index: 4000;
+        }
+        .welcome h1 {
+            font-size: 3em;
+            font-weight: bold;
+        }
+        .welcome p {
+            font-size: 1.5em;
+            margin-top: 10px;
+        }
+        /* Stylish Thank You Screen */
+        .thank-you {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #4CAF50, #81C784);
+            color: white;
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        }
+        .thank-you h1 {
+            font-size: 3em;
+            font-weight: bold;
+        }
+        .thank-you p {
+            font-size: 1.5em;
+            margin-top: 10px;
+        }
+        /* Current Location Bar */
+        .location-bar {
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            font-size: 1.8em;
+            text-align: center;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <!-- Map Container -->
+    <div id="map">
+        <div class="info" id="locationInfo"></div>
+    </div>
+
+    <!-- Full-Screen Image Display -->
+    <div class="fullscreen" id="fullscreenDiv">
+        <img src="" alt="Location Image" id="imageDisplay" />
+    </div>
+
+    <!-- Welcome Screen -->
+    <div class="welcome" id="welcomeDiv">
+        <h1>Welcome to the Temple Route Journey</h1>
+    </div>
+
+    <!-- Thank You Screen -->
+    <div class="thank-you" id="thankYouDiv">
+        <h1>Thank You!</h1>
+    </div>
+
+    <!-- Current Location Bar -->
+    <div class="location-bar" id="locationBar">
+        <span id="currentLocationText">current Location: Gonchala (Home)</span>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Initialize map
+        const map = L.map('map').setView([17.0411, 82.2275], 10);
+
+        // Add OpenStreetMap tiles (free)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Define locations with multiple images
+        const locations = [
+            {
+                lat: 17.0411,
+                lng: 82.2275,
+                name: 'Gonchala (Home)',
+            },
+            {
+                lat: 17.2433,
+                lng: 81.8261,
+                name: 'Thantikonda Venkateswara Swamy Temple',
+                images: [
+                    'images/t1.jpg',
+                    'images/t2.jpg',
+                    'images/t3.jpg',
+                    'images/t4.jpg',
+                    'images/t5.jpg',
+                    'images/t6.jpg',
+                    'images/t7.jpg',
+                    'images/t8.jpg',
+                    'images/t9.jpg',
+                    'images/t10.jpg',
+                    'images/t11.jpg',
+                    'images/t12.jpg',
+                    'images/t13.jpg',
+                    'images/t14.jpg',
+                    'images/t15.jpg',
+                    'images/t16.jpg',
+                ]
+            },
+            {
+                lat: 17.1833,
+                lng: 81.8667,
+                name: 'Korukonda Lakshmi Narasimha Swamy Temple',
+                images: [
+                    'images/k1.jpg',
+                    'images/k2.jpg',
+                    'images/k3.jpg',
+                    'images/k4.jpg',
+                    'images/k5.jpg',
+                    'images/k6.jpg',
+                    'images/k7.jpg',
+                ]
+            },
+            {
+                lat: 17.1114,
+                lng: 82.2344,
+                name: 'Divili Chinna Tirupathi',
+                images: [
+                    'images/d1.jpg',
+                    'images/d2.jpg',
+                    'images/d3.jpg'
+
+                ]
+            },
+            {
+                lat: 17.0411,
+                lng: 82.2275,
+                name: 'Gonchala (Home)',
+                images: [
+                    'images/image.png'
+
+                ]
+            }
+        ];
+
+        // Extract route points
+        const routePoints = locations.map(loc => [loc.lat, loc.lng]);
+
+        // Add markers for locations
+        locations.forEach(loc => {
+            L.marker([loc.lat, loc.lng])
+                .bindPopup(loc.name)
+                .addTo(map);
+        });
+
+        // Draw route line
+        const routeLine = L.polyline(routePoints, {
+            color: 'blue',
+            weight: 4,
+            opacity: 0.7
+        }).addTo(map);
+
+        // Create moving marker
+        const movingMarker = L.circleMarker([17.0411, 82.2275], {
+            color: 'red',
+            fillColor: '#f03',
+            fillOpacity: 0.8,
+            radius: 8
+        }).addTo(map);
+
+        // Full-screen display setup
+        const fullscreenDiv = document.getElementById('fullscreenDiv');
+        const imageDisplay = document.getElementById('imageDisplay');
+        const thankYouDiv = document.getElementById('thankYouDiv');
+        const welcomeDiv = document.getElementById('welcomeDiv');
+        const locationBar = document.getElementById('locationBar');
+        const locationInfoDiv = document.getElementById('locationInfo');
+
+        let currentPoint = 0;
+        let highlightedMarker = null;
+
+        function animate() {
+            if (currentPoint >= routePoints.length - 1) {
+                fullscreenDiv.style.display = 'none';
+                thankYouDiv.style.display = 'flex';
+                return;
+            }
+
+            const start = routePoints[currentPoint];
+            const end = routePoints[currentPoint + 1];
+            const steps = 150; // Adjust for smoothness
+            let step = 0;
+
+            // Create a blue circle for the current location
+            if (highlightedMarker) {
+                map.removeLayer(highlightedMarker);
+            }
+
+            highlightedMarker = L.circleMarker([start[0], start[1]], {
+                color: 'blue',
+                fillColor: '#33c3ff',
+                fillOpacity: 0.8,
+                radius: 10
+            }).addTo(map);
+
+            function move() {
+                if (step >= steps) {
+                    currentPoint++;
+                    map.setView(routePoints[currentPoint], 15, { animate: true, duration: 1 });
+                    showImages(locations[currentPoint].images, () => {
+                        map.setView(routePoints[currentPoint], 10, { animate: true, duration: 1 });
+                        setTimeout(animate, 1000);
+                    });
+                    return;
+                }
+
+                const lat = start[0] + ((end[0] - start[0]) * step / steps);
+                const lng = start[1] + ((end[1] - start[1]) * step / steps);
+                movingMarker.setLatLng([lat, lng]);
+                map.panTo([lat, lng]);
+                step++;
+                setTimeout(move, 40);
+            }
+            move();
+            locationBar.innerHTML = `Current Location: <span class="highlight">${locations[currentPoint].name}</span>`;
+        }
+
+        function showImages(images, callback) {
+            let currentImage = 0;
+            fullscreenDiv.style.display = 'flex';
+
+            function nextImage() {
+                if (currentImage >= images.length) {
+                    fullscreenDiv.style.display = 'none';
+                    callback();
+                    return;
+                }
+                imageDisplay.src = images[currentImage];
+                currentImage++;
+                setTimeout(nextImage, 1500);
+            }
+            nextImage();
+        }
+
+        setTimeout(() => {
+            welcomeDiv.style.display = 'none';
+            animate();
+        }, 5000);
+    </script>
+</body>
+</html>
