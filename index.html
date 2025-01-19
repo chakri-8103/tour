@@ -136,25 +136,44 @@
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
-        // Initialize map
-        const map = L.map('map').setView([17.0411, 82.2275], 10);
+        // Audio setup
+        let audio = new Audio(); // Initialize without a song initially
+        audio.loop = true; // Loop the song
+        let audioStarted = false; // To check if audio started
 
-        // Add OpenStreetMap tiles (free)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
+        // Start playing the audio when the page is loaded or refreshed
+        window.onload = function() {
+            if (!audioStarted) {
+                audio.play().catch(error => {
+                    console.log("Error playing audio: ", error);
+                });
+                audioStarted = true;
+            }
+        };
 
-        // Define locations with multiple images
+        // Handle audio play on user interaction due to browser restrictions
+        document.addEventListener('click', function() {
+            if (!audioStarted) {
+                audio.play().catch(error => {
+                    console.log("Error playing audio: ", error);
+                });
+                audioStarted = true;
+            }
+        });
+
+        // Define locations with images and songs
         const locations = [
             {
                 lat: 17.0411,
                 lng: 82.2275,
                 name: 'Gonchala (Home)',
+                song: 'audio/audio.mp3',  // Song for Gonchala (Home)
             },
             {
                 lat: 17.2433,
                 lng: 81.8261,
                 name: 'Thantikonda Venkateswara Swamy Temple',
+                song: 'audio/audio.mp3',  // Song for Thantikonda Venkateswara Swamy Temple
                 images: [
                     'images/t1.jpg',
                     'images/t2.jpg',
@@ -171,13 +190,24 @@
                     'images/t13.jpg',
                     'images/t14.jpg',
                     'images/t15.jpg',
+                    'images/t17.jpg',
+                    'images/t1.jpg',
                     'images/t16.jpg',
+                    'images/t16.jpg',
+                    'images/t16.jpg',
+                    'images/t16.jpg',
+                    'images/t16.jpg',
+                    'images/t16.jpg',
+                    'images/t16.jpg',
+                    'images/t16.jpg',
+
                 ]
             },
             {
                 lat: 17.1833,
                 lng: 81.8667,
                 name: 'Korukonda Lakshmi Narasimha Swamy Temple',
+                song: 'audio/audio.mp3',  // Song for Korukonda Lakshmi Narasimha Swamy Temple
                 images: [
                     'images/k1.jpg',
                     'images/k2.jpg',
@@ -192,23 +222,41 @@
                 lat: 17.1114,
                 lng: 82.2344,
                 name: 'Divili Chinna Tirupathi',
+                song: 'audio/audio.mp3',  // Song for Divili Chinna Tirupathi
                 images: [
                     'images/d1.jpg',
                     'images/d2.jpg',
                     'images/d3.jpg'
-
                 ]
             },
             {
                 lat: 17.0411,
                 lng: 82.2275,
                 name: 'Gonchala (Home)',
+                song: 'audio/audio.mp3',  // Same song for Gonchala (Home)
                 images: [
                     'images/image.png'
-
                 ]
             }
         ];
+
+        // Function to change the song based on the location
+        function changeSong(location) {
+            if (audio.src !== location.song) {
+                audio.src = location.song;
+                audio.play().catch(error => {
+                    console.log("Error playing audio: ", error);
+                });
+            }
+        }
+
+        // Initialize map
+        const map = L.map('map').setView([17.0411, 82.2275], 10);
+
+        // Add OpenStreetMap tiles (free)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
 
         // Extract route points
         const routePoints = locations.map(loc => [loc.lat, loc.lng]);
@@ -270,14 +318,20 @@
                 radius: 10
             }).addTo(map);
 
+            // Change the song based on the current location when images are shown
+            function showImagesAndChangeSong() {
+                changeSong(locations[currentPoint]);  // Change song when entering location
+                showImages(locations[currentPoint].images, () => {
+                    map.setView(routePoints[currentPoint], 10, { animate: true, duration: 1 });
+                    setTimeout(animate, 1000);
+                });
+            }
+
             function move() {
                 if (step >= steps) {
                     currentPoint++;
                     map.setView(routePoints[currentPoint], 15, { animate: true, duration: 1 });
-                    showImages(locations[currentPoint].images, () => {
-                        map.setView(routePoints[currentPoint], 10, { animate: true, duration: 1 });
-                        setTimeout(animate, 1000);
-                    });
+                    showImagesAndChangeSong(); // Call the function to show images and play the song
                     return;
                 }
 
@@ -292,27 +346,28 @@
             locationBar.innerHTML = `Current Location: <span class="highlight">${locations[currentPoint].name}</span>`;
         }
 
+        // Show images in fullscreen
         function showImages(images, callback) {
-            let currentImage = 0;
-            fullscreenDiv.style.display = 'flex';
-
+            let index = 0;
             function nextImage() {
-                if (currentImage >= images.length) {
+                if (index < images.length) {
+                    imageDisplay.src = images[index];
+                    fullscreenDiv.style.display = 'flex';
+                    index++;
+                    setTimeout(nextImage, 3000); // Show each image for 3 seconds
+                } else {
                     fullscreenDiv.style.display = 'none';
-                    callback();
-                    return;
+                    callback();  // Move to the next location
                 }
-                imageDisplay.src = images[currentImage];
-                currentImage++;
-                setTimeout(nextImage, 1500);
             }
             nextImage();
         }
 
+        // Start animation on page load
         setTimeout(() => {
             welcomeDiv.style.display = 'none';
             animate();
-        }, 5000);
+        }, 5000); // Wait for 5 seconds before starting the animation
     </script>
 </body>
 </html>
